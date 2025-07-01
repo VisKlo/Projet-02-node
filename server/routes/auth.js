@@ -1,17 +1,14 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
 import { User } from '../models/index.js';
 
 const router = express.Router();
 
-// Register
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Vérifie si l'utilisateur existe déjà (email ou nom)
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [{ email }, { name }]
@@ -24,10 +21,8 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Crée l'utilisateur : le password sera hashé automatiquement par les hooks du modèle
     const user = await User.create({ name, email, password });
 
-    // Génère le token JWT
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET || 'fallback_secret',
@@ -48,25 +43,20 @@ router.post('/register', async (req, res) => {
   }
 });
 
-
-// Login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Recherche utilisateur par email
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(400).json({ message: 'Email ou mot de passe incorrect' });
     }
 
-    // Vérifie le mot de passe
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Email ou mot de passe incorrect' });
     }
 
-    // Génère le token JWT
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET || 'fallback_secret',

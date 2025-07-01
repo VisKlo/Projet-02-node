@@ -5,14 +5,12 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get dashboard statistics
 router.get('/dashboard', auth, async (req, res) => {
   try {
-    // Count totals
     const totalFurniture = await Furniture.count();
     const totalMaterials = await Material.count();
     
-    // Furniture by category
+
     const furnitureByCategory = await Furniture.findAll({
       attributes: [
         'category',
@@ -21,7 +19,6 @@ router.get('/dashboard', auth, async (req, res) => {
       group: ['category']
     });
     
-    // Materials by category
     const materialsByCategory = await Material.findAll({
       attributes: [
         'category',
@@ -29,8 +26,7 @@ router.get('/dashboard', auth, async (req, res) => {
       ],
       group: ['category']
     });
-    
-    // Recent furniture (last 10)
+
     const recentFurniture = await Furniture.findAll({
       limit: 10,
       order: [['createdAt', 'DESC']],
@@ -39,13 +35,12 @@ router.get('/dashboard', auth, async (req, res) => {
           model: Material,
           as: 'materials',
           through: {
-            attributes: ['quantity', 'unit']
+            attributes: ['quantity']
           }
         }
       ]
     });
     
-    // Monthly furniture creation
     const monthlyFurniture = await Furniture.findAll({
       attributes: [
         [fn('YEAR', col('createdAt')), 'year'],
@@ -66,10 +61,6 @@ router.get('/dashboard', auth, async (req, res) => {
         _id: item.category,
         count: parseInt(item.dataValues.count)
       })),
-      furnitureByStatus: furnitureByStatus.map(item => ({
-        _id: item.status,
-        count: parseInt(item.dataValues.count)
-      })),
       materialsByCategory: materialsByCategory.map(item => ({
         _id: item.category,
         count: parseInt(item.dataValues.count)
@@ -84,6 +75,7 @@ router.get('/dashboard', auth, async (req, res) => {
       }))
     });
   } catch (error) {
+    console.error('Erreur dans /api/stats/dashboard:', error);
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 });

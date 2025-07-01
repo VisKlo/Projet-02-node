@@ -4,7 +4,6 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all suppliers
 router.get('/', async (req, res) => {
   try {
     const suppliers = await Supplier.findAll();
@@ -14,7 +13,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get supplier by ID
 router.get('/:id', async (req, res) => {
   try {
     const supplier = await Supplier.findByPk(req.params.id);
@@ -29,7 +27,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create supplier
 router.post('/', auth, async (req, res) => {
   try {
     const supplier = await Supplier.create(req.body);
@@ -39,7 +36,6 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Update supplier
 router.put('/:id', auth, async (req, res) => {
   try {
     const supplier = await Supplier.findByPk(req.params.id);
@@ -55,7 +51,6 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Delete supplier
 router.delete('/:id', auth, async (req, res) => {
   try {
     const supplier = await Supplier.findByPk(req.params.id);

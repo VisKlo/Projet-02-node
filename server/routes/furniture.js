@@ -5,7 +5,26 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all furniture
+router.get('/search/:keyword', async (req, res) => {
+  try {
+    const furniture = await Furniture.findAll({
+      include: [
+        {
+          model: Material,
+          as: 'materials',
+          through: { attributes: [] }, // corrigé ici
+          include: [{ model: Supplier, as: 'supplier' }]
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json(furniture);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const furniture = await Furniture.findAll({
@@ -13,13 +32,8 @@ router.get('/', async (req, res) => {
         {
           model: Material,
           as: 'materials',
-          through: { attributes: ['quantity', 'unit'] },
-          include: [
-            {
-              model: Supplier,
-              as: 'supplier'
-            }
-          ]
+          through: { attributes: [] },
+          include: [{ model: Supplier, as: 'supplier' }]
         }
       ],
       order: [['createdAt', 'DESC']]
@@ -32,8 +46,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-
-// Get furniture by ID
 router.get('/:id', async (req, res) => {
   try {
     const furniture = await Furniture.findByPk(req.params.id, {
@@ -41,15 +53,8 @@ router.get('/:id', async (req, res) => {
         {
           model: Material,
           as: 'materials',
-          through: {
-            attributes: ['quantity', 'unit']
-          },
-          include: [
-            {
-              model: Supplier,
-              as: 'supplier'
-            }
-          ]
+          through: { attributes: [] },
+          include: [{ model: Supplier, as: 'supplier' }]
         }
       ]
     });
@@ -64,42 +69,31 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create furniture
 router.post('/', auth, async (req, res) => {
   try {
+    console.log('Requête POST furniture reçue:', req.body);
     const { materials, ...furnitureData } = req.body;
 
     const furniture = await Furniture.create(furnitureData);
 
-    // Add materials if provided
     if (materials && materials.length > 0) {
-      for (const material of materials) {
+      for (const mat of materials) {
         await FurnitureMaterial.create({
           furnitureId: furniture.id,
-          materialId: material.material,
-          quantity: material.quantity,
-          unit: material.unit
+          materialId: mat.material
         });
       }
     }
 
-    // Fetch the complete furniture with materials
     const populatedFurniture = await Furniture.findByPk(furniture.id, {
       include: [
         {
           model: Material,
           as: 'materials',
-          through: {
-            attributes: ['quantity', 'unit']
-          },
-          include: [
-            {
-              model: Supplier,
-              as: 'supplier'
-            }
-          ]
-        }
-      ]
+          through: { attributes: [] },
+          include: [{ model: Supplier, as: 'supplier' }],
+        },
+      ],
     });
 
     res.status(201).json(populatedFurniture);
@@ -108,7 +102,6 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Update furniture
 router.put('/:id', auth, async (req, res) => {
   try {
     const { materials, ...furnitureData } = req.body;
@@ -120,39 +113,26 @@ router.put('/:id', auth, async (req, res) => {
 
     await furniture.update(furnitureData);
 
-    // Update materials if provided
     if (materials) {
-      // Remove existing materials
       await FurnitureMaterial.destroy({
         where: { furnitureId: furniture.id }
       });
 
-      // Add new materials
       for (const material of materials) {
         await FurnitureMaterial.create({
           furnitureId: furniture.id,
-          materialId: material.material,
-          quantity: material.quantity,
-          unit: material.unit
+          materialId: material.material
         });
       }
     }
 
-    // Fetch the updated furniture with materials
     const updatedFurniture = await Furniture.findByPk(furniture.id, {
       include: [
         {
           model: Material,
           as: 'materials',
-          through: {
-            attributes: ['quantity', 'unit']
-          },
-          include: [
-            {
-              model: Supplier,
-              as: 'supplier'
-            }
-          ]
+          through: { attributes: [] },
+          include: [{ model: Supplier, as: 'supplier' }]
         }
       ]
     });
@@ -163,7 +143,6 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Delete furniture
 router.delete('/:id', auth, async (req, res) => {
   try {
     const furniture = await Furniture.findByPk(req.params.id);
@@ -171,8 +150,6 @@ router.delete('/:id', auth, async (req, res) => {
     if (!furniture) {
       return res.status(404).json({ message: 'Meuble non trouvé' });
     }
-
-    // Delete associated materials first
     await FurnitureMaterial.destroy({
       where: { furnitureId: furniture.id }
     });
@@ -185,37 +162,6 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// Search furniture by keywords
-router.get('/search/:keyword', async (req, res) => {
-  try {
-    const keyword = req.params.keyword.toLowerCase();
-    const furniture = await Furniture.findAll({
-      where: {
-        keywords: {
-          [Op.like]: `%${keyword}%`
-        }
-      },
-      include: [
-        {
-          model: Material,
-          as: 'materials',
-          through: {
-            attributes: ['quantity', 'unit']
-          },
-          include: [
-            {
-              model: Supplier,
-              as: 'supplier'
-            }
-          ]
-        }
-      ]
-    });
 
-    res.json(furniture);
-  } catch (error) {
-    res.status(500).json({ message: 'Erreur serveur', error: error.message });
-  }
-});
 
 export default router;

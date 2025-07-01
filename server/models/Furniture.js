@@ -22,11 +22,6 @@ const Furniture = sequelize.define('Furniture', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-
-  imageUrl: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
 }, {
   tableName: 'Furnitures',
   timestamps: true,

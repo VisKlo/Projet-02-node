@@ -5,7 +5,6 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all materials
 router.get('/', async (req, res) => {
   try {
     const materials = await Material.findAll({
@@ -22,7 +21,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get material by ID
 router.get('/:id', async (req, res) => {
   try {
     const material = await Material.findByPk(req.params.id, {
@@ -44,7 +42,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create material
 router.post('/', auth, async (req, res) => {
   try {
     const material = await Material.create(req.body);
@@ -64,7 +61,6 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Update material
 router.put('/:id', auth, async (req, res) => {
   try {
     const material = await Material.findByPk(req.params.id);
@@ -90,7 +86,6 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Delete material
 router.delete('/:id', auth, async (req, res) => {
   try {
     const material = await Material.findByPk(req.params.id);
@@ -107,7 +102,6 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-// Search materials by keyword
 router.get('/search/:keyword', async (req, res) => {
   try {
     const keyword = req.params.keyword.toLowerCase();

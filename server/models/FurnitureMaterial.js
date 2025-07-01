@@ -24,12 +24,10 @@ const FurnitureMaterial = sequelize.define('FurnitureMaterial', {
     },
   },
   quantity: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: false,
-    validate: {
-      min: 0,
-    },
-  }
+    defaultValue: 1,
+  },
 });
 
 export default FurnitureMaterial;
