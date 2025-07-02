@@ -5,11 +5,12 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import FurnitureList from './pages/FurnitureList';
 import FurnitureForm from './pages/FurnitureForm';
-import FurnitureDetail from './pages/FurnitureDetail';
 import MaterialsList from './pages/MaterialsList';
 import SuppliersList from './pages/SuppliersList';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import FurnitureDetail from './pages/FurnitureDetail';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 

@@ -1,5 +1,4 @@
 import express from 'express';
-import { Op } from 'sequelize';
 import { Furniture, Material, Supplier, FurnitureMaterial } from '../models/index.js';
 import auth from '../middleware/auth.js';
 
@@ -8,11 +7,16 @@ const router = express.Router();
 router.get('/search/:keyword', async (req, res) => {
   try {
     const furniture = await Furniture.findAll({
+      where: {
+        keywords: {
+          [Op.like]: `%${keyword}%`
+        }
+      },
       include: [
         {
           model: Material,
           as: 'materials',
-          through: { attributes: [] }, // corrigé ici
+          through: { attributes: ['quantity'] },
           include: [{ model: Supplier, as: 'supplier' }]
         }
       ],
@@ -32,7 +36,7 @@ router.get('/', async (req, res) => {
         {
           model: Material,
           as: 'materials',
-          through: { attributes: [] },
+          through: { attributes: ['quantity'] },
           include: [{ model: Supplier, as: 'supplier' }]
         }
       ],
@@ -53,7 +57,7 @@ router.get('/:id', async (req, res) => {
         {
           model: Material,
           as: 'materials',
-          through: { attributes: [] },
+          through: { attributes: ['quantity'] },
           include: [{ model: Supplier, as: 'supplier' }]
         }
       ]
@@ -71,7 +75,6 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    console.log('Requête POST furniture reçue:', req.body);
     const { materials, ...furnitureData } = req.body;
 
     const furniture = await Furniture.create(furnitureData);
@@ -80,7 +83,8 @@ router.post('/', auth, async (req, res) => {
       for (const mat of materials) {
         await FurnitureMaterial.create({
           furnitureId: furniture.id,
-          materialId: mat.material
+          materialId: mat.material,
+          quantity: mat.quantity || 1
         });
       }
     }
@@ -90,7 +94,7 @@ router.post('/', auth, async (req, res) => {
         {
           model: Material,
           as: 'materials',
-          through: { attributes: [] },
+          through: { attributes: ['quantity'] },
           include: [{ model: Supplier, as: 'supplier' }],
         },
       ],
@@ -121,7 +125,8 @@ router.put('/:id', auth, async (req, res) => {
       for (const material of materials) {
         await FurnitureMaterial.create({
           furnitureId: furniture.id,
-          materialId: material.material
+          materialId: material.material,
+          quantity: material.quantity || 1
         });
       }
     }
@@ -131,7 +136,7 @@ router.put('/:id', auth, async (req, res) => {
         {
           model: Material,
           as: 'materials',
-          through: { attributes: [] },
+          through: { attributes: ['quantity'] },
           include: [{ model: Supplier, as: 'supplier' }]
         }
       ]
@@ -150,6 +155,7 @@ router.delete('/:id', auth, async (req, res) => {
     if (!furniture) {
       return res.status(404).json({ message: 'Meuble non trouvé' });
     }
+
     await FurnitureMaterial.destroy({
       where: { furnitureId: furniture.id }
     });
@@ -161,7 +167,5 @@ router.delete('/:id', auth, async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 });
-
-
 
 export default router;

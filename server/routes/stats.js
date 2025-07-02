@@ -1,6 +1,6 @@
 import express from 'express';
 import { Furniture, Material, Supplier } from '../models/index.js';
-import { Op, fn, col } from 'sequelize';
+import { fn, col } from 'sequelize';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();

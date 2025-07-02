@@ -24,7 +24,7 @@ const FurnitureMaterial = sequelize.define('FurnitureMaterial', {
     },
   },
   quantity: {
-    type: DataTypes.FLOAT,
+    type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 1,
   },
