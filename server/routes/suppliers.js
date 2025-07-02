@@ -1,5 +1,5 @@
 import express from 'express';
-import { Supplier } from '../models/index.js';
+import { Supplier, Material } from '../models/index.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
@@ -33,6 +33,20 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json(supplier);
   } catch (error) {
     res.status(400).json({ message: 'Erreur lors de la création', error: error.message });
+  }
+});
+
+router.get('/:id/materials', async (req, res) => {
+  try {
+    const supplierId = req.params.id;
+    const supplier = await Supplier.findByPk(supplierId);
+    if (!supplier) return res.status(404).json({ message: 'Fournisseur non trouvé' });
+
+    const materials = await Material.findAll({ where: { supplierId } });
+
+    res.json({ supplier, materials });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 });
 

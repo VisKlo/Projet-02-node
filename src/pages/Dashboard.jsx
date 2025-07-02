@@ -51,7 +51,7 @@ const Dashboard = () => {
   }
 
   const categoryChartData = {
-    labels: stats?.furnitureByCategory?.map(item => item._id) || [],
+    labels: stats?.furnitureByCategory?.map(item => item.id) || [],
     datasets: [
       {
         label: 'Nombre de meubles',
@@ -151,7 +151,7 @@ const Dashboard = () => {
               </thead>
               <tbody>
                 {stats?.recentFurniture?.map((furniture) => (
-                  <tr key={furniture._id}>
+                  <tr key={furniture.id}>
                     <td>
                         {furniture.name}
                     </td>

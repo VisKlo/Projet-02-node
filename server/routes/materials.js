@@ -61,6 +61,23 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+router.post('/:id/addQuantity', async (req, res) => {
+  try {
+    const materialId = req.params.id;
+    const { quantityToAdd } = req.body;
+
+    const material = await Material.findByPk(materialId);
+    if (!material) return res.status(404).json({ message: 'Matériau non trouvé' });
+
+    material.quantity = (material.quantity || 0) + Number(quantityToAdd);
+    await material.save();
+
+    res.json({ message: 'Quantité mise à jour', material });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+});
+
 router.put('/:id', auth, async (req, res) => {
   try {
     const material = await Material.findByPk(req.params.id);

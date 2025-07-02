@@ -10,6 +10,7 @@ import SuppliersList from './pages/SuppliersList';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import FurnitureDetail from './pages/FurnitureDetail';
+import Purchase from './pages/Purchase';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
@@ -58,6 +59,7 @@ function App() {
                   <Route path="/furniture/:id" element={<FurnitureDetail />} />
                   <Route path="/materials" element={<MaterialsList />} />
                   <Route path="/suppliers" element={<SuppliersList />} />
+                  <Route path="/purchase/:supplierId" element={<Purchase />} />
                 </Routes>
               </AppLayout>
             </ProtectedRoute>

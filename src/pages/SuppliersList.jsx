@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
 
 const SuppliersList = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     fetchData();
@@ -16,12 +20,12 @@ const SuppliersList = () => {
         axios.get('/suppliers'),
         axios.get('/materials')
       ]);
-      
+
       const parsedSuppliers = suppliersResponse.data.map(supplier => ({
-      ...supplier,
-      contact: typeof supplier.contact === 'string' ? JSON.parse(supplier.contact) : supplier.contact,
-      specialties: typeof supplier.specialties === 'string' ? JSON.parse(supplier.specialties) : supplier.specialties,
-    }));
+        ...supplier,
+        contact: typeof supplier.contact === 'string' ? JSON.parse(supplier.contact) : supplier.contact,
+        specialties: typeof supplier.specialties === 'string' ? JSON.parse(supplier.specialties) : supplier.specialties,
+      }));
 
       setSuppliers(parsedSuppliers);
       setMaterials(materialsResponse.data);
@@ -55,9 +59,9 @@ const SuppliersList = () => {
       <div className="row">
         {suppliers.map((supplier) => {
           const supplierMaterials = getMaterialsForSupplier(supplier.id);
-          
+
           return (
-            <div key={supplier._id} className="col-xl-4 col-md-6 mb-4">
+            <div key={supplier.id} className="col-xl-4 col-md-6 mb-4">
               <div className="card h-100">
                 <div className="card-header">
                   <h5 className="m-0">{supplier.name}</h5>
@@ -91,10 +95,10 @@ const SuppliersList = () => {
                     {supplierMaterials.length > 0 ? (
                       <div className="list-group list-group-flush">
                         {supplierMaterials.slice(0, 3).map((material) => (
-                          <div key={material._id} className="list-group-item px-0 py-2">
+                          <div key={material.id} className="list-group-item px-0 py-2">
                             <div className="d-flex justify-content-between align-items-center">
                               <div>
-                                  {material.name}
+                                {material.name}
                                 <br />
                                 <small className="text-muted">{material.category}</small>
                               </div>
@@ -115,12 +119,12 @@ const SuppliersList = () => {
                   </div>
                 </div>
                 <div className="card-footer">
-                  <div className="row text-center">
-                    <div className="col-6">
-                      <div className="fw-bold">{supplierMaterials.length}</div>
-                      <small className="text-muted">Matériaux</small>
-                    </div>
-                  </div>
+                  <button
+                    className="btn btn-primary w-100"
+                    onClick={() => navigate(`/purchase/${supplier.id}`)}
+                  >
+                    Acheter
+                  </button>
                 </div>
               </div>
             </div>

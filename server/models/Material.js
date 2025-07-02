@@ -23,6 +23,16 @@ const Material = sequelize.define('Material', {
     allowNull: false,
   },
 
+  quantity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+
+  price: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+  },
+
   supplierId: {
     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: true,

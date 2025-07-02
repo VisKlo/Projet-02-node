@@ -97,6 +97,7 @@ const MaterialsList = () => {
                 </p>
                 
                 <p className="card-text small">{material.description}</p>
+                <p className="small fw-bold mt-2">Quantité disponible : {material.quantity ?? '0'}</p>
                 </div>
 
                 {material.keywords && material.keywords.length > 0 && (
