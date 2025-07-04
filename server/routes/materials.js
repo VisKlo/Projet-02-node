@@ -5,15 +5,11 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Récupère tous les matériaux avec leur fournisseur
 router.get('/', async (req, res) => {
   try {
     const materials = await Material.findAll({
-      include: [
-        {
-          model: Supplier,
-          as: 'supplier'
-        }
-      ]
+      include: [{ model: Supplier, as: 'supplier' }]
     });
     res.json(materials);
   } catch (error) {
@@ -21,15 +17,11 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Récupère un matériau par son ID (avec le fournisseur associé)
 router.get('/:id', async (req, res) => {
   try {
     const material = await Material.findByPk(req.params.id, {
-      include: [
-        {
-          model: Supplier,
-          as: 'supplier'
-        }
-      ]
+      include: [{ model: Supplier, as: 'supplier' }]
     });
     
     if (!material) {
@@ -42,25 +34,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', auth, async (req, res) => {
-  try {
-    const material = await Material.create(req.body);
-    
-    const populatedMaterial = await Material.findByPk(material.id, {
-      include: [
-        {
-          model: Supplier,
-          as: 'supplier'
-        }
-      ]
-    });
-    
-    res.status(201).json(populatedMaterial);
-  } catch (error) {
-    res.status(400).json({ message: 'Erreur lors de la création', error: error.message });
-  }
-});
-
+//  Ajouter de la quantité à un matériaux
 router.post('/:id/addQuantity', async (req, res) => {
   try {
     const materialId = req.params.id;
@@ -78,6 +52,7 @@ router.post('/:id/addQuantity', async (req, res) => {
   }
 });
 
+// Modifier un matériau existant
 router.put('/:id', auth, async (req, res) => {
   try {
     const material = await Material.findByPk(req.params.id);
@@ -85,16 +60,12 @@ router.put('/:id', auth, async (req, res) => {
     if (!material) {
       return res.status(404).json({ message: 'Matériau non trouvé' });
     }
-    
+
     await material.update(req.body);
-    
+
+    // Renvoie le matériau mis à jour avec son fournisseur
     const updatedMaterial = await Material.findByPk(material.id, {
-      include: [
-        {
-          model: Supplier,
-          as: 'supplier'
-        }
-      ]
+      include: [{ model: Supplier, as: 'supplier' }]
     });
     
     res.json(updatedMaterial);
@@ -103,37 +74,18 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-router.delete('/:id', auth, async (req, res) => {
-  try {
-    const material = await Material.findByPk(req.params.id);
-    
-    if (!material) {
-      return res.status(404).json({ message: 'Matériau non trouvé' });
-    }
-    
-    await material.destroy();
-    
-    res.json({ message: 'Matériau supprimé avec succès' });
-  } catch (error) {
-    res.status(500).json({ message: 'Erreur serveur', error: error.message });
-  }
-});
-
+// Rechercher des matériaux par mot-clé (dans le champ `keywords`)
 router.get('/search/:keyword', async (req, res) => {
   try {
     const keyword = req.params.keyword.toLowerCase();
+
     const materials = await Material.findAll({
       where: {
         keywords: {
           [Op.like]: `%${keyword}%`
         }
       },
-      include: [
-        {
-          model: Supplier,
-          as: 'supplier'
-        }
-      ]
+      include: [{ model: Supplier, as: 'supplier' }]
     });
     
     res.json(materials);

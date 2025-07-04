@@ -9,8 +9,9 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -19,6 +20,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
+  ArcElement
 );
 
 const Dashboard = () => {
@@ -69,6 +71,25 @@ const Dashboard = () => {
     ]
   };
 
+  const materialPieData = {
+    labels: stats?.materialQuantities?.map(m => m.name) || [],
+    datasets: [
+      {
+        label: 'Quantité disponible',
+        data: stats?.materialQuantities?.map(m => m.quantity) || [],
+        backgroundColor: stats?.materialQuantities?.map((_, i) => {
+          const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+            '#C9CBCF', '#33CC33', '#FF66B2', '#6699FF', '#FF9933', '#66CCCC'
+          ];
+          return colors[i % colors.length];
+        }),
+        borderColor: '#fff',
+        borderWidth: 1
+      }
+    ]
+  };
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -86,33 +107,15 @@ const Dashboard = () => {
       </div>
 
       <div className="row mb-4">
-        <div className="col-xl-6 col-md-6 mb-4">
-          <div className="card stats-card">
-            <div className="card-body">
-              <div className="d-flex justify-content-between">
-                <div>
-                  <div className="stats-number">{stats?.totals?.furniture || 0}</div>
-                  <div className="stats-label">Meubles</div>
-                </div>
-                <div className="align-self-center">
-                  <i className="bi bi-archive fs-2"></i>
-                </div>
+        <div className="card stats-card">
+          <div className="card-body">
+            <div className="d-flex justify-content-between">
+              <div>
+                <div className="stats-number">{stats?.totals?.furniture || 0}</div>
+                <div className="stats-label">Meubles</div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-xl-6 col-md-6 mb-4">
-          <div className="card stats-card success">
-            <div className="card-body">
-              <div className="d-flex justify-content-between">
-                <div>
-                  <div className="stats-number">{stats?.totals?.materials || 0}</div>
-                  <div className="stats-label">Matériaux</div>
-                </div>
-                <div className="align-self-center">
-                  <i className="bi bi-layers fs-2"></i>
-                </div>
+              <div className="align-self-center">
+                <i className="bi bi-archive fs-2"></i>
               </div>
             </div>
           </div>
@@ -120,17 +123,33 @@ const Dashboard = () => {
       </div>
 
       <div className="row mb-4">
-        <div className="col-lg-12">
-          <div className="card">
+        <div className="col-lg-6 col-md-6 mb-4">
+          <div className="card" style={{ height: '350px' }}>
             <div className="card-header">
               <h6 className="m-0">Meubles par Catégorie</h6>
             </div>
-            <div className="card-body" style={{ height: '350px' }}>
+            <div className="card-body" style={{ height: '300px' }}>
               <Bar data={categoryChartData} options={chartOptions} />
             </div>
           </div>
         </div>
+
+        <div className="col-lg-6 col-md-6 mb-4">
+          <div className="card" style={{ height: '350px' }}>
+            <div className="card-header">
+              <h6 className="m-0">Quantité des matériaux en stock</h6>
+            </div>
+            <div className="card-body d-flex justify-content-center align-items-center" style={{ height: '300px' }}>
+              <div>
+                <Pie data={materialPieData} />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+
+
 
       <div className="card">
         <div className="card-header d-flex justify-content-between align-items-center">
@@ -153,7 +172,7 @@ const Dashboard = () => {
                 {stats?.recentFurniture?.map((furniture) => (
                   <tr key={furniture.id}>
                     <td>
-                        {furniture.name}
+                      {furniture.name}
                     </td>
                     <td>{furniture.category}</td>
                     <td>{new Date(furniture.createdAt).toLocaleDateString()}</td>

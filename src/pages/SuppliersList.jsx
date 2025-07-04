@@ -24,7 +24,6 @@ const SuppliersList = () => {
       const parsedSuppliers = suppliersResponse.data.map(supplier => ({
         ...supplier,
         contact: typeof supplier.contact === 'string' ? JSON.parse(supplier.contact) : supplier.contact,
-        specialties: typeof supplier.specialties === 'string' ? JSON.parse(supplier.specialties) : supplier.specialties,
       }));
 
       setSuppliers(parsedSuppliers);

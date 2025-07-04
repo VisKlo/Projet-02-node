@@ -64,7 +64,6 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="admin@furniture.com"
               />
             </div>
 
@@ -78,7 +77,6 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                placeholder="••••••••"
               />
             </div>
 

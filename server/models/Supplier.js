@@ -14,11 +14,7 @@ const Supplier = sequelize.define('Supplier', {
   contact: {
     type: DataTypes.JSON,
     allowNull: true,
-  },
-  specialties: {
-    type: DataTypes.JSON,
-    allowNull: true,
-  },
+  }
 }, {
   tableName: 'Suppliers',
   timestamps: true,

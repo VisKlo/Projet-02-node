@@ -1,11 +1,15 @@
 import express from 'express';
 import { Furniture, Material, Supplier, FurnitureMaterial } from '../models/index.js';
+import { sequelize } from '../models/index.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Rechercher des meubles par mot-clé (champ `keywords`)
 router.get('/search/:keyword', async (req, res) => {
   try {
+    const { keyword } = req.params;
+
     const furniture = await Furniture.findAll({
       where: {
         keywords: {
@@ -29,6 +33,7 @@ router.get('/search/:keyword', async (req, res) => {
   }
 });
 
+// Lister tous les meubles avec leurs matériaux et fournisseurs
 router.get('/', async (req, res) => {
   try {
     const furniture = await Furniture.findAll({
@@ -50,6 +55,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Obtenir un meuble par ID avec ses matériaux et fournisseur
 router.get('/:id', async (req, res) => {
   try {
     const furniture = await Furniture.findByPk(req.params.id, {
@@ -73,23 +79,41 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Créer un nouveau meuble et mettre à jour le stock des matériaux utilisés
 router.post('/', auth, async (req, res) => {
+  const t = await sequelize.transaction();
+
   try {
     const { materials, ...furnitureData } = req.body;
 
-    const furniture = await Furniture.create(furnitureData);
-
-    if (materials && materials.length > 0) {
-      for (const mat of materials) {
-        await FurnitureMaterial.create({
-          furnitureId: furniture.id,
-          materialId: mat.material,
-          quantity: mat.quantity || 1
-        });
+    // Vérifie la disponibilité des matériaux
+    for (const mat of materials) {
+      const material = await Material.findByPk(mat.material, { transaction: t });
+      if (!material || material.quantity < mat.quantity) {
+        throw new Error(`Stock insuffisant pour le matériau ID ${mat.material} (stock: ${material?.quantity || 0})`);
       }
     }
 
-    const populatedFurniture = await Furniture.findByPk(furniture.id, {
+    // Crée le meuble
+    const furniture = await Furniture.create(furnitureData, { transaction: t });
+
+    // Crée les liaisons meubles-matériaux + met à jour le stock
+    for (const mat of materials) {
+      await FurnitureMaterial.create({
+        furnitureId: furniture.id,
+        materialId: mat.material,
+        quantity: mat.quantity,
+      }, { transaction: t });
+
+      const material = await Material.findByPk(mat.material, { transaction: t });
+      material.quantity -= mat.quantity;
+      await material.save({ transaction: t });
+    }
+
+    await t.commit();
+
+    // Retourne le meuble
+    const populated = await Furniture.findByPk(furniture.id, {
       include: [
         {
           model: Material,
@@ -100,54 +124,87 @@ router.post('/', auth, async (req, res) => {
       ],
     });
 
-    res.status(201).json(populatedFurniture);
+    res.status(201).json(populated);
   } catch (error) {
+    await t.rollback();
     res.status(400).json({ message: 'Erreur lors de la création', error: error.message });
   }
 });
 
+// Modifier un meuble et réajuster le stock en conséquence
 router.put('/:id', auth, async (req, res) => {
+  const t = await sequelize.transaction();
+
   try {
     const { materials, ...furnitureData } = req.body;
-
-    const furniture = await Furniture.findByPk(req.params.id);
+    const furniture = await Furniture.findByPk(req.params.id, { transaction: t });
     if (!furniture) {
-      return res.status(404).json({ message: 'Meuble non trouvé' });
+      throw new Error('Meuble non trouvé');
     }
 
-    await furniture.update(furnitureData);
+    // Restaure le stock des anciens matériaux
+    const oldMaterials = await FurnitureMaterial.findAll({
+      where: { furnitureId: furniture.id },
+      transaction: t,
+    });
+    for (const oldMat of oldMaterials) {
+      const material = await Material.findByPk(oldMat.materialId, { transaction: t });
+      material.quantity += oldMat.quantity;
+      await material.save({ transaction: t });
+    }
 
-    if (materials) {
-      await FurnitureMaterial.destroy({
-        where: { furnitureId: furniture.id }
-      });
+    // Supprime les anciennes liaisons
+    await FurnitureMaterial.destroy({
+      where: { furnitureId: furniture.id },
+      transaction: t,
+    });
 
-      for (const material of materials) {
-        await FurnitureMaterial.create({
-          furnitureId: furniture.id,
-          materialId: material.material,
-          quantity: material.quantity || 1
-        });
+    // Vérifie la disponibilité des nouveaux matériaux
+    for (const mat of materials) {
+      const material = await Material.findByPk(mat.material, { transaction: t });
+      if (!material || material.quantity < mat.quantity) {
+        throw new Error(`Stock insuffisant pour le matériau ID ${mat.material} (stock: ${material?.quantity || 0})`);
       }
     }
 
-    const updatedFurniture = await Furniture.findByPk(furniture.id, {
+    // Met à jour le meuble
+    await furniture.update(furnitureData, { transaction: t });
+
+    // Ajoute les nouveaux matériaux et ajuste le stock
+    for (const mat of materials) {
+      await FurnitureMaterial.create({
+        furnitureId: furniture.id,
+        materialId: mat.material,
+        quantity: mat.quantity
+      }, { transaction: t });
+
+      const material = await Material.findByPk(mat.material, { transaction: t });
+      material.quantity -= mat.quantity;
+      await material.save({ transaction: t });
+    }
+
+    await t.commit();
+
+    // Retourne l’objet mis à jour
+    const updated = await Furniture.findByPk(furniture.id, {
       include: [
         {
           model: Material,
           as: 'materials',
           through: { attributes: ['quantity'] },
-          include: [{ model: Supplier, as: 'supplier' }]
-        }
-      ]
+          include: [{ model: Supplier, as: 'supplier' }],
+        },
+      ],
     });
 
-    res.json(updatedFurniture);
+    res.json(updated);
   } catch (error) {
-    res.status(400).json({ message: 'Erreur lors de la mise à jour', error: error.message });
+    await t.rollback();
+    res.status(400).json({ message: 'Erreur mise à jour', error: error.message });
   }
 });
 
+// Supprime un meuble et ses liaisons avec les matériaux
 router.delete('/:id', auth, async (req, res) => {
   try {
     const furniture = await Furniture.findByPk(req.params.id);

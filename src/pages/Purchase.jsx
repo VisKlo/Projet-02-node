@@ -44,7 +44,6 @@ const Purchase = () => {
         quantityToAdd: quantity,
       });
 
-      // Met à jour localement la quantité du matériau
       setMaterials((prev) =>
         prev.map((mat) =>
           mat.id === materialId ? { ...mat, quantity: res.data.material.quantity } : mat
@@ -53,7 +52,6 @@ const Purchase = () => {
 
       alert(`Achat effectué pour ${quantity} unité(s).`);
 
-      // Reset quantité achetée
       setQuantitiesToBuy((prev) => ({ ...prev, [materialId]: 0 }));
     } catch (err) {
       console.error(err);

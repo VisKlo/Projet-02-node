@@ -5,10 +5,12 @@ import { User } from '../models/index.js';
 
 const router = express.Router();
 
+// Route d'inscription
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // Vérifie si l'utilisateur existe déjà par email ou nom
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [{ email }, { name }]
@@ -21,14 +23,17 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Crée un nouvel utilisateur
     const user = await User.create({ name, email, password });
 
+    // Génère un token JWT
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '7d' }
     );
 
+    // Retourne les infos de l'utilisateur + token
     res.status(201).json({
       message: 'Utilisateur créé avec succès',
       token,
@@ -43,26 +48,31 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// Route de connexion
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Cherche l'utilisateur par email
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(400).json({ message: 'Email ou mot de passe incorrect' });
     }
 
+    // Vérifie le mot de passe
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Email ou mot de passe incorrect' });
     }
 
+    // Génère un token JWT
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET || 'fallback_secret',
       { expiresIn: '7d' }
     );
 
+    // Retourne les infos de l'utilisateur + token
     res.json({
       message: 'Connexion réussie',
       token,

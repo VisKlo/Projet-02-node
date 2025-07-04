@@ -23,6 +23,10 @@ const initializeDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log('Connected to MySQL database');
+    if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true, force: false });
+      console.log('Database synchronized');
+    }
   } catch (error) {
     console.error('Database connection error:', error);
   }

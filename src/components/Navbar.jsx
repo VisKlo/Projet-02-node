@@ -17,7 +17,7 @@ const Navbar = () => {
               <i className="bi bi-person me-2"></i>
               {user?.username}
             </button>
-            <ul className="dropdown-menu">
+            <ul className="dropdown-menu dropdown-menu-end">
               <li>
                 <span className="dropdown-item-text">
                   <small className="text-muted">{user?.email}</small>
@@ -31,6 +31,7 @@ const Navbar = () => {
                 </button>
               </li>
             </ul>
+
           </div>
         </div>
       </div>

@@ -18,12 +18,11 @@ const FurnitureForm = () => {
   const [availableMaterials, setAvailableMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEdit);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     fetchMaterials();
-    if (isEdit) {
-      fetchFurniture();
-    }
+    if (isEdit) fetchFurniture();
   }, [id]);
 
   const fetchMaterials = async () => {
@@ -31,7 +30,7 @@ const FurnitureForm = () => {
       const response = await axios.get('/materials');
       setAvailableMaterials(response.data);
     } catch (error) {
-      console.error('Erreur lors du chargement des matériaux:', error);
+      console.error('Erreur chargement matériaux:', error);
     }
   };
 
@@ -39,7 +38,6 @@ const FurnitureForm = () => {
     try {
       const response = await axios.get(`/furniture/${id}`);
       const furniture = response.data;
-
       setFormData({
         name: furniture.name,
         category: furniture.category,
@@ -51,7 +49,7 @@ const FurnitureForm = () => {
         }))
       });
     } catch (error) {
-      console.error('Erreur lors du chargement du meuble:', error);
+      console.error('Erreur chargement meuble:', error);
     } finally {
       setLoadingData(false);
     }
@@ -68,10 +66,7 @@ const FurnitureForm = () => {
   const handleMaterialChange = (index, field, value) => {
     const newMaterials = [...formData.materials];
     newMaterials[index][field] = field === 'quantity' ? Number(value) : value;
-    setFormData(prev => ({
-      ...prev,
-      materials: newMaterials
-    }));
+    setFormData(prev => ({ ...prev, materials: newMaterials }));
   };
 
   const addMaterial = () => {
@@ -91,6 +86,16 @@ const FurnitureForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage('');
+
+    for (const mat of formData.materials) {
+      const stock = availableMaterials.find(m => m.id == mat.materialId)?.quantity || 0;
+      if (mat.quantity > stock) {
+        setErrorMessage(`La quantité demandée pour un matériau dépasse le stock disponible (stock : ${stock})`);
+        setLoading(false);
+        return;
+      }
+    }
 
     try {
       const submitData = {
@@ -112,7 +117,7 @@ const FurnitureForm = () => {
 
       navigate('/furniture');
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
+      console.error('Erreur sauvegarde:', error);
       alert('Erreur lors de la sauvegarde du meuble');
     } finally {
       setLoading(false);
@@ -148,6 +153,10 @@ const FurnitureForm = () => {
           </h1>
         </div>
       </div>
+
+      {errorMessage && (
+        <div className="alert alert-danger">{errorMessage}</div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
@@ -200,44 +209,48 @@ const FurnitureForm = () => {
           />
         </div>
 
-        
-
         <div className="mb-3">
           <label className="form-label">Matériaux</label>
-          {formData.materials.map((mat, index) => (
-            <div key={index} className="d-flex align-items-center mb-2 gap-2">
-              <select
-                className="form-select"
-                value={mat.materialId}
-                onChange={(e) => handleMaterialChange(index, 'materialId', e.target.value)}
-                required
-              >
-                <option value="">Sélectionner un matériau</option>
-                {availableMaterials.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
+          {formData.materials.map((mat, index) => {
+            const selectedMaterial = availableMaterials.find(m => m.id == mat.materialId);
+            const stock = selectedMaterial?.quantity ?? '...';
+            return (
+              <div key={index} className="d-flex align-items-center mb-2 gap-2">
+                <select
+                  className="form-select"
+                  value={mat.materialId}
+                  onChange={(e) => handleMaterialChange(index, 'materialId', e.target.value)}
+                  required
+                >
+                  <option value="">Sélectionner un matériau</option>
+                  {availableMaterials.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
 
-              <input
-                type="number"
-                min="1"
-                className="form-control"
-                placeholder="Quantité"
-                value={mat.quantity}
-                onChange={(e) => handleMaterialChange(index, 'quantity', e.target.value)}
-                style={{ maxWidth: '100px' }}
-                required
-              />
+                <input
+                  type="number"
+                  min="1"
+                  className="form-control"
+                  placeholder="Quantité"
+                  value={mat.quantity}
+                  onChange={(e) => handleMaterialChange(index, 'quantity', e.target.value)}
+                  style={{ maxWidth: '100px' }}
+                  required
+                />
 
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-sm"
-                onClick={() => removeMaterial(index)}
-              >
-                Supprimer
-              </button>
-            </div>
-          ))}
+                <span className="text-muted">/ Stock: {stock}</span>
+
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() => removeMaterial(index)}
+                >
+                  Supprimer
+                </button>
+              </div>
+            );
+          })}
 
           <button
             type="button"

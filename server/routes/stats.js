@@ -1,16 +1,20 @@
 import express from 'express';
-import { Furniture, Material, Supplier } from '../models/index.js';
+import { Furniture, Material } from '../models/index.js';
 import { fn, col } from 'sequelize';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Route pour récupérer les données du dashboard
 router.get('/dashboard', auth, async (req, res) => {
   try {
+    // Nombre total de meubles
     const totalFurniture = await Furniture.count();
-    const totalMaterials = await Material.count();
-    
 
+    // Nombre total de matériaux
+    const totalMaterials = await Material.count();
+
+    // Nombre de meubles par catégorie
     const furnitureByCategory = await Furniture.findAll({
       attributes: [
         'category',
@@ -18,15 +22,14 @@ router.get('/dashboard', auth, async (req, res) => {
       ],
       group: ['category']
     });
-    
-    const materialsByCategory = await Material.findAll({
-      attributes: [
-        'category',
-        [fn('COUNT', col('id')), 'count']
-      ],
-      group: ['category']
+
+    // Quantité disponible pour chaque matériau
+    const materialQuantities = await Material.findAll({
+      attributes: ['name', 'quantity'],
+      order: [['name', 'ASC']]
     });
 
+    // Derniers meubles créés avec leurs matériaux
     const recentFurniture = await Furniture.findAll({
       limit: 10,
       order: [['createdAt', 'DESC']],
@@ -40,7 +43,8 @@ router.get('/dashboard', auth, async (req, res) => {
         }
       ]
     });
-    
+
+    // Meubles créés par mois
     const monthlyFurniture = await Furniture.findAll({
       attributes: [
         [fn('YEAR', col('createdAt')), 'year'],
@@ -51,23 +55,24 @@ router.get('/dashboard', auth, async (req, res) => {
       order: [[fn('YEAR', col('createdAt')), 'ASC'], [fn('MONTH', col('createdAt')), 'ASC']],
       limit: 12
     });
-    
+
+    // Envoi des données formatées
     res.json({
       totals: {
         furniture: totalFurniture,
         materials: totalMaterials
       },
       furnitureByCategory: furnitureByCategory.map(item => ({
-        _id: item.category,
+        id: item.category,
         count: parseInt(item.dataValues.count)
       })),
-      materialsByCategory: materialsByCategory.map(item => ({
-        _id: item.category,
-        count: parseInt(item.dataValues.count)
+      materialQuantities: materialQuantities.map(mat => ({
+        name: mat.name,
+        quantity: mat.quantity
       })),
       recentFurniture,
       monthlyFurniture: monthlyFurniture.map(item => ({
-        _id: {
+        id: {
           year: item.dataValues.year,
           month: item.dataValues.month
         },
